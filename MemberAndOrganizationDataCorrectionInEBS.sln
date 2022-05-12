@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1525
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemberAndOrganizationDataCorrectionInEBS", "MemberAndOrganizationDataCorrectionInEBS\MemberAndOrganizationDataCorrectionInEBS.csproj", "{A2A79A54-C684-414E-A73F-5E80824EBA51}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2A79A54-C684-414E-A73F-5E80824EBA51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2A79A54-C684-414E-A73F-5E80824EBA51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2A79A54-C684-414E-A73F-5E80824EBA51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2A79A54-C684-414E-A73F-5E80824EBA51}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FCE5A58C-CC33-4B9E-B525-A11FD3418097}
+	EndGlobalSection
+EndGlobal

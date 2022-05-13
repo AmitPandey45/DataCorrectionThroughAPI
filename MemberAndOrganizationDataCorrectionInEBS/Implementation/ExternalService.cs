@@ -41,6 +41,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
 
         public MemberOrOrganizationDemographicInfoDto DemoGraphicInformationCore(string orgOrmemberAccountNumber)
         {
+            _memberSystemLogger.LogTrace($"%%%%%%%%%%%%%%DemoGraphicInformationCore Mule API Process Start%%%%%%%%%%%%%%");
             MemberOrOrganizationDemographicInfoDto demographicInfo = null;
             string error = string.Empty;
             try
@@ -54,7 +55,6 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
                 dynamic jObject = this.GetParsedResponseData(getTask.Result);
                 if (getTask.Result.IsSuccessStatusCode)
                 {
-                    ////MemberOrOrganizationDemographicInfo demographicInfo = null;
                     var serializedData = JsonConvert.SerializeObject(jObject);
                     demographicInfo = JsonConvert.DeserializeObject<MemberOrOrganizationDemographicInfoDto>(serializedData);
 
@@ -70,69 +70,6 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
 
                             return item;
                         }).ToList();
-
-                    if (demographicInfo != null && demographicInfo.Accounts != null)
-                    {
-                        ////string email = null;
-                        ////string phone = null;
-                        ////string fax = null;
-                        ////if (demographicInfo.Accounts.Communication != null)
-                        ////{
-                        ////    if (demographicInfo.Accounts.Communication.Any(x => x.Type.ToUpper().Equals(Constants.Email)
-                        ////    && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag)))
-                        ////    {
-                        ////        email = demographicInfo.Accounts.Communication.FirstOrDefault(x => x.Type.ToUpper().Equals(Constants.Email)
-                        ////        && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag)).Value;
-                        ////    }
-
-                        ////    if (demographicInfo.Accounts.Communication.Any(x => x.Type.ToUpper().Equals(Constants.Phone)
-                        ////    && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag)))
-                        ////    {
-                        ////        phone = demographicInfo.Accounts.Communication.FirstOrDefault(x => x.Type.ToUpper().Equals(Constants.Phone)
-                        ////        && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag)).Value;
-                        ////    }
-
-                        ////    if (demographicInfo.Accounts.Communication.Any(x => x.Type.ToUpper().Equals(Constants.Fax)
-                        ////    && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag)))
-                        ////    {
-                        ////        fax = demographicInfo.Accounts.Communication.FirstOrDefault(x => x.Type.ToUpper().Equals(Constants.Fax)
-                        ////        && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag)).Value;
-                        ////    }
-                        ////}
-
-                        ////response = new DemographicInformationDto
-                        ////{
-                        ////    EMail = email,
-                        ////    Phone = phone,
-                        ////    Fax = fax,
-                        ////    FirstName = demographicInfo.Accounts.Account.FirstName,
-                        ////    MiddleName = demographicInfo.Accounts.Account.MiddleName,
-                        ////    LastName = demographicInfo.Accounts.Account.LastName,
-                        ////    UserName = demographicInfo.Accounts.Account.AccountName,
-                        ////    PartyId = demographicInfo.Accounts.Account.PartyId
-                        ////};
-
-                        ////if (demographicInfo.Accounts.Addresses != null && demographicInfo.Accounts.Addresses.Count > 0)
-                        ////{
-                        ////    if (demographicInfo.Accounts.Addresses.Any(obj => obj.SiteUseCode.ToUpper().Equals(primaryAddressType)))
-                        ////    {
-                        ////        var address = demographicInfo.Accounts.Addresses.FirstOrDefault(x => x.SiteUseCode.ToUpper().Equals(primaryAddressType)
-                        ////        && x.PrimaryFlag.ToUpper().Equals(Constants.PrimaryFlag));
-                        ////        if (address != null)
-                        ////        {
-                        ////            response.Address = new AddressModelDto
-                        ////            {
-                        ////                StreetAddress1 = address.Address1,
-                        ////                StreetAddress2 = address.Address2,
-                        ////                Country = address.Country,
-                        ////                State = address.State ?? address.Province,
-                        ////                City = address.City,
-                        ////                PostalCode = address.PostalCode
-                        ////            };
-                        ////        }
-                        ////    }
-                        ////}
-                    }
                 }
                 else
                 {
@@ -147,11 +84,14 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
                 this._memberSystemLogger.LogException(ex, Constants.EbsApiErrorGetDemoGraphicInformation);
             }
 
+            _memberSystemLogger.LogTrace($"%%%%%%%%%%%%%%DemoGraphicInformationCore Mule API Process End%%%%%%%%%%%%%%");
+
             return demographicInfo;
         }
 
         public(bool result, string error) EBSOrganizationMemberRelation(string organizationAccountNumber, string memberAccountNumber)
         {
+            _memberSystemLogger.LogTrace($"$$$$$$$$$$$$$$$$EBSOrganizationMemberRelation Mule API Process Start$$$$$$$$$$$$$$$$");
             bool isRelation = false;
             string error = string.Empty;
             try
@@ -160,16 +100,22 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
                 var url = string.Concat(apiBaseUrl, "/", organizationAccountNumber, Constants.ACCOUNTDETAILURL);
                 this._memberSystemLogger.LogTrace(url);
                 string json = JsonConvert.SerializeObject(new EBSOrganizationMemberInputDto { CreateByModule = Constants.HZCPUI, MemberAccountNumber = memberAccountNumber, UserType = Constants.ADMIN });
-                this._memberSystemLogger.LogTrace($"EBSOrganizationMemberRelation Payload: {json}");
+                this._memberSystemLogger.LogTrace($"EBSOrganizationMemberRelation Request Payload: {json}");
                 var putTask = this._httpClientWrapper.PutAsync(this.accountManagementHttpClient, url, new StringContent(json, Encoding.UTF8, Constants.JSONMEDIATYPE));
                 putTask.Wait();
                 dynamic jObject = this.GetParsedResponseData(putTask.Result);
+                this._memberSystemLogger.LogTrace($"EBSOrganizationMemberRelation Response Payload: {JsonConvert.SerializeObject(jObject)}");
                 if (putTask.Result.IsSuccessStatusCode)
                 {
                     int? responseStatus = Convert.ToInt32(jObject?.returnstatus);
                     if (responseStatus != null && responseStatus.Equals((int)System.Net.HttpStatusCode.OK))
                     {
                         isRelation = true;
+                    }
+                    else
+                    {
+                        error = $"{Constants.EbsApiErrorOrganizationMemberAccountRelationship}{Constants.SingleSpace}{JsonConvert.SerializeObject(jObject)}";
+                        this._memberSystemLogger.LogFatal(error, FatalStatusCode);
                     }
                 }
                 else
@@ -185,6 +131,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
                 this._memberSystemLogger.LogException(ex, Constants.EbsApiErrorOrganizationMemberAccountRelationship);
             }
 
+            _memberSystemLogger.LogTrace($"$$$$$$$$$$$$$$$$EBSOrganizationMemberRelation Mule API Process End$$$$$$$$$$$$$$$$");
             return (isRelation, error);
         }
 
@@ -192,12 +139,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
             string organizationAccountNumber,
             InactiveContactsInputDto[] allMemberContactId)
         {
-            ////bool isRemoveMemberAndOrganizationFacilityNotIntegratedWithEBS = true;
-            ////if (isRemoveMemberAndOrganizationFacilityNotIntegratedWithEBS)
-            ////{
-            ////    return (true, string.Empty);
-            ////}
-
+            _memberSystemLogger.LogTrace($"#################RemoveMemberAndOrganizationFacilityRelationshipInEBS Mule API Process Start#################");
             bool isMemberOrgFacilityRelationshipInactivated = false;
             string error = string.Empty;
             try
@@ -209,16 +151,22 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
                     this.GetRemoveMemberOrganizationRelationshipRequestPayload(organizationAccountNumber, allMemberContactId);
 
                 string json = JsonConvert.SerializeObject(removeMemberOrganizationInput);
-                this._memberSystemLogger.LogTrace($"RemoveMemberAndOrganizationFacilityRelationshipInEBS Payload: {json}");
+                this._memberSystemLogger.LogTrace($"RemoveMemberAndOrganizationFacilityRelationshipInEBS Request Payload: {json}");
                 var putTask = this._httpClientWrapper.PutAsync(this.accountManagementHttpClient, url, new StringContent(json, Encoding.UTF8, Constants.JSONMEDIATYPE));
                 putTask.Wait();
                 dynamic jObject = this.GetParsedResponseData(putTask.Result);
+                this._memberSystemLogger.LogTrace($"RemoveMemberAndOrganizationFacilityRelationshipInEBS Response Payload: {JsonConvert.SerializeObject(jObject)}");
                 if (putTask.Result.IsSuccessStatusCode)
                 {
                     int? responseStatus = Convert.ToInt32(jObject?.returnstatus);
                     if (responseStatus != null && responseStatus.Equals((int)System.Net.HttpStatusCode.OK))
                     {
                         isMemberOrgFacilityRelationshipInactivated = true;
+                    }
+                    else
+                    {
+                        error = $"{Constants.EbsApiErrorRemoveMemberAndOrganizationFacilityRelationshipInEBS}{Constants.SingleSpace}{JsonConvert.SerializeObject(jObject)}";
+                        this._memberSystemLogger.LogFatal(error, FatalStatusCode);
                     }
                 }
                 else
@@ -233,6 +181,8 @@ namespace MemberAndOrganizationDataCorrectionInEBS.Implementation
                 error = $"{Constants.EbsApiErrorRemoveMemberAndOrganizationFacilityRelationshipInEBS}{Constants.SingleSpace}{error}";
                 this._memberSystemLogger.LogException(ex, Constants.EbsApiErrorRemoveMemberAndOrganizationFacilityRelationshipInEBS);
             }
+
+            _memberSystemLogger.LogTrace($"#################RemoveMemberAndOrganizationFacilityRelationshipInEBS Mule API Process End#################");
 
             return (isMemberOrgFacilityRelationshipInactivated, error);
         }

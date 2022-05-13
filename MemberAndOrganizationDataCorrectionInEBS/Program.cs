@@ -3,7 +3,6 @@ using MemberAndOrganizationDataCorrectionInEBS.Extension;
 using MemberAndOrganizationDataCorrectionInEBS.Interface;
 using MemberAndOrganizationDataCorrectionInEBS.Model;
 using MemberAndOrganizationDataCorrectionInEBS.Utility;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -17,6 +16,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS
         /// Account number of an organization which CompanyId = 200 in MCS2.0
         /// </summary>
         const string OrganizationAccountNumber = "000113065";
+        const string FileName = "AllMemberAndOrganizationAccountDetail.xlsx";
 
         private readonly IMemberSystemLoggerService memberSystemLogger;
         private readonly IExternalService externalService;
@@ -38,15 +38,21 @@ namespace MemberAndOrganizationDataCorrectionInEBS
 
             var testingWithOnlyTwoDataSet = allMemberAndOrgAccountDetails.Where(s => !string.IsNullOrEmpty(s.OrgAccountNumber)).ToList();
 
+            logger.LogTrace("=================MemberAndOrganizationDataCorrectionInEBS Process Start=================");
+
             foreach (var memberAndOrgDetails in testingWithOnlyTwoDataSet)
             {
-                InActivateOrgAndMemberRelationInEBSSystem(externalService,
-                    new List<MemberAndOrganizationAccountDetail>
-                    {
-                        memberAndOrgDetails
-                    });
+                logger.LogTrace($"******************Start the data correction for Member Account- {memberAndOrgDetails.MemberAccountNumber} Member ContactId- {memberAndOrgDetails.MemberContactId} Previous Organization Account- {OrganizationAccountNumber} Correct Organization Account- {memberAndOrgDetails.OrgAccountNumber}******************");
+
+                //// This Mule API will break the relationship with Member Account & Fixed Org Account- 000113065 in EBS System
+                InActivateOrgAndMemberRelationInEBSSystem(externalService, memberAndOrgDetails);
+                //// This Mule API will create the relationship with Member Account & Correct Organization Account
                 externalService.EBSOrganizationMemberRelation(memberAndOrgDetails.OrgAccountNumber, memberAndOrgDetails.MemberAccountNumber);
+
+                logger.LogTrace($"******************End the data correction for Member Account- {memberAndOrgDetails.MemberAccountNumber} Member ContactId- {memberAndOrgDetails.MemberContactId} Previous Organization Account- {OrganizationAccountNumber} Correct Organization Account- {memberAndOrgDetails.OrgAccountNumber}******************");
             }
+
+            logger.LogTrace("=================MemberAndOrganizationDataCorrectionInEBS Process End=================");
 
             ////return;
 
@@ -81,7 +87,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS
         private static List<MemberAndOrganizationAccountDetail> LoadMemberAndOrganizationAccountDetailFromExel()
         {
             var allMemberAndOrgAccountDetails = new List<MemberAndOrganizationAccountDetail>();
-            WorkBook workbook = WorkBook.Load("Save_DataTable_CSV.csv");
+            WorkBook workbook = WorkBook.Load(FileName);
             WorksheetsCollection workSheets = workbook.WorkSheets;
             foreach (WorkSheet sheet in workSheets)
             {
@@ -113,6 +119,19 @@ namespace MemberAndOrganizationDataCorrectionInEBS
             }).ToArray();
 
             externalService.RemoveMemberAndOrganizationFacilityRelationshipInEBS(OrganizationAccountNumber, allMemberContactId);
+        }
+
+        private static void InActivateOrgAndMemberRelationInEBSSystem(IExternalService externalService, MemberAndOrganizationAccountDetail memberAndOrgAccountDetails)
+        {
+            var memberContactId = new InactiveContactsInputDto[]
+            {
+                new InactiveContactsInputDto
+                {
+                    ContactId = memberAndOrgAccountDetails.MemberContactId.ToString()
+                }
+            };
+
+            externalService.RemoveMemberAndOrganizationFacilityRelationshipInEBS(OrganizationAccountNumber, memberContactId);
         }
 
         private static void CreateExcelSheetForAllActiveMembersAfter30March2022(List<MemberOrOrganizationAccountRelationshipDetailsDto> activeDataAfter31March2022)

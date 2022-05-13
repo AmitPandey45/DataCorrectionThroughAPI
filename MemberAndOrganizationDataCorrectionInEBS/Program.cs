@@ -33,6 +33,13 @@ namespace MemberAndOrganizationDataCorrectionInEBS
             var logger = program.memberSystemLogger;
             var externalService = program.externalService;
 
+            ////List<MemberOrOrganizationAccountRelationshipDetailsDto> activeDataAfter31March2022 =
+            ////    GetAllMemberAssociatedWithAnOrganization(externalService);
+
+            ////CreateExcelSheetForAllActiveMembersAfter30March2022(activeDataAfter31March2022);
+
+            ////return;
+
             List<MemberAndOrganizationAccountDetail> allMemberAndOrgAccountDetails =
                 LoadMemberAndOrganizationAccountDetailFromExel();
 
@@ -45,9 +52,15 @@ namespace MemberAndOrganizationDataCorrectionInEBS
                 logger.LogTrace($"******************Start the data correction for Member Account- {memberAndOrgDetails.MemberAccountNumber} Member ContactId- {memberAndOrgDetails.MemberContactId} Previous Organization Account- {OrganizationAccountNumber} Correct Organization Account- {memberAndOrgDetails.OrgAccountNumber}******************");
 
                 //// This Mule API will break the relationship with Member Account & Fixed Org Account- 000113065 in EBS System
-                InActivateOrgAndMemberRelationInEBSSystem(externalService, memberAndOrgDetails);
+                if (!string.IsNullOrEmpty(OrganizationAccountNumber) && memberAndOrgDetails.MemberContactId > 0)
+                {
+                    InActivateOrgAndMemberRelationInEBSSystem(externalService, memberAndOrgDetails);
+                }
                 //// This Mule API will create the relationship with Member Account & Correct Organization Account
-                externalService.EBSOrganizationMemberRelation(memberAndOrgDetails.OrgAccountNumber, memberAndOrgDetails.MemberAccountNumber);
+                if (!string.IsNullOrEmpty(memberAndOrgDetails.OrgAccountNumber) && !string.IsNullOrEmpty(memberAndOrgDetails.MemberAccountNumber))
+                {
+                    externalService.EBSOrganizationMemberRelation(memberAndOrgDetails.OrgAccountNumber, memberAndOrgDetails.MemberAccountNumber);
+                }
 
                 logger.LogTrace($"******************End the data correction for Member Account- {memberAndOrgDetails.MemberAccountNumber} Member ContactId- {memberAndOrgDetails.MemberContactId} Previous Organization Account- {OrganizationAccountNumber} Correct Organization Account- {memberAndOrgDetails.OrgAccountNumber}******************");
             }
@@ -169,7 +182,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS
 
                 rowCount++;
             }
-            wb.SaveAsCsv("Save_DataTable_CSV.csv");
+            wb.SaveAsCsv(FileName);
         }
     }
 }

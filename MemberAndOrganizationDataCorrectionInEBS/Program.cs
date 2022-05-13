@@ -38,10 +38,6 @@ namespace MemberAndOrganizationDataCorrectionInEBS
 
             var testingWithOnlyTwoDataSet = allMemberAndOrgAccountDetails.Where(s => !string.IsNullOrEmpty(s.OrgAccountNumber)).ToList();
 
-            ////InActivateOrgAndMemberRelationInEBSSystem(externalService, testingWithOnlyTwoDataSet);
-            logger.LogTrace("Program execuation start");
-            logger.LogTrace("Program execuation end");
-
             foreach (var memberAndOrgDetails in testingWithOnlyTwoDataSet)
             {
                 InActivateOrgAndMemberRelationInEBSSystem(externalService,
@@ -52,10 +48,20 @@ namespace MemberAndOrganizationDataCorrectionInEBS
                 externalService.EBSOrganizationMemberRelation(memberAndOrgDetails.OrgAccountNumber, memberAndOrgDetails.MemberAccountNumber);
             }
 
-            return;
+            ////return;
 
-            logger.LogTrace("Program execuation start");
+            ////logger.LogTrace("Program execuation start");
 
+            ////List<MemberOrOrganizationAccountRelationshipDetailsDto> activeDataAfter31March2022 =
+            ////    GetAllMemberAssociatedWithAnOrganization(externalService);
+
+            ////CreateExcelSheetForAllActiveMembersAfter30March2022(activeDataAfter31March2022);
+
+            ////logger.LogTrace("Program execuation end");
+        }
+
+        private static List<MemberOrOrganizationAccountRelationshipDetailsDto> GetAllMemberAssociatedWithAnOrganization(IExternalService externalService)
+        {
             MemberOrOrganizationDemographicInfoDto demographicInfo = externalService.DemoGraphicInformationCore(OrganizationAccountNumber);
 
             List<MemberOrOrganizationAccountRelationshipDetailsDto> allMemberAssociatedWithOrg =
@@ -69,10 +75,7 @@ namespace MemberAndOrganizationDataCorrectionInEBS
                 .Where(m => m.Start_Date >= march31_2022 && m.RelationshipStatus.Equals("A")).ToList();
             var inActiveDataAfter31March2022 = allMemberAssociatedWithOrg
                 .Where(m => m.Start_Date >= march31_2022 && m.RelationshipStatus.Equals("I")).ToList();
-
-            CreateExcelSheetForAllActiveMembersAfter30March2022(activeDataAfter31March2022);
-
-            logger.LogTrace("Program execuation end");
+            return activeDataAfter31March2022;
         }
 
         private static List<MemberAndOrganizationAccountDetail> LoadMemberAndOrganizationAccountDetailFromExel()

@@ -9,6 +9,7 @@ using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.OleDb;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -22,6 +23,9 @@ namespace MemberAndOrganizationDataCorrectionInEBS
         /// </summary>
         const string OrganizationAccountNumber = "000113065";
         const string FileName = "AllMemberAndOrganizationAccountDetail.xlsx";
+        const string MemberAccountNumberColumnName = "MemberAccountNumber";
+        const string MemberContactIdColumnName = "MemberContactId";
+        const string OrgAccountNumberColumnName = "OrgAccountNumber";
 
         private readonly IMemberSystemLoggerService memberSystemLogger;
         private readonly IExternalService externalService;
@@ -38,7 +42,6 @@ namespace MemberAndOrganizationDataCorrectionInEBS
             var logger = program.memberSystemLogger;
             var externalService = program.externalService;
 
-            ////return;
             try
             {
                 ////List<MemberOrOrganizationAccountRelationshipDetailsDto> activeDataAfter31March2022 =
@@ -48,21 +51,25 @@ namespace MemberAndOrganizationDataCorrectionInEBS
 
                 ////return;
 
+                ////List<MemberAndOrganizationAccountDetail> allMemberAndOrgAccountDetails =
+                ////    LoadMemberAndOrganizationAccountDetailFromExelWithFreeLibrary(logger);
+
+                DataTable dt = LoadMemberAndOrganizationAccountDetailFromExelAsDatatable();
                 List<MemberAndOrganizationAccountDetail> allMemberAndOrgAccountDetails =
-                    LoadMemberAndOrganizationAccountDetailFromExelWithFreeLibrary(logger);
+                    ConvertDataTableToList(dt);
 
-               //// List<MemberAndOrganizationAccountDetail> allMemberAndOrgAccountDetails1 =
-               ////     LoadMemberAndOrganizationAccountDetailFromExel();
+                //// List<MemberAndOrganizationAccountDetail> allMemberAndOrgAccountDetails1 =
+                ////     LoadMemberAndOrganizationAccountDetailFromExel();
 
-               //// allMemberAndOrgAccountDetails1.RemoveAt(174);
+                //// allMemberAndOrgAccountDetails1.RemoveAt(174);
 
-               ////var diff =
-               ////     allMemberAndOrgAccountDetails
-               ////     .Where(s => !allMemberAndOrgAccountDetails1
-               ////     .Any(t => s.MemberAccountNumber.Equals(t.MemberAccountNumber) &&
-               ////     s.MemberContactId.Equals(t.MemberContactId) &&
-               ////     s.OrgAccountNumber.Equals(t.OrgAccountNumber))
-               ////     );
+                ////var diff =
+                ////     allMemberAndOrgAccountDetails
+                ////     .Where(s => !allMemberAndOrgAccountDetails1
+                ////     .Any(t => s.MemberAccountNumber.Equals(t.MemberAccountNumber) &&
+                ////     s.MemberContactId.Equals(t.MemberContactId) &&
+                ////     s.OrgAccountNumber.Equals(t.OrgAccountNumber))
+                ////     );
 
                 var testingWithOnlyTwoDataSet = allMemberAndOrgAccountDetails.Where(s => !string.IsNullOrEmpty(s.OrgAccountNumber)).ToList();
                 testingWithOnlyTwoDataSet = allMemberAndOrgAccountDetails;
@@ -236,9 +243,9 @@ namespace MemberAndOrganizationDataCorrectionInEBS
             ////    columnIndex++;
             ////}
 
-            ws["A" + (rowCount)].Value = "MemberAccountNumber";
-            ws["B" + (rowCount)].Value = "MemberContactId";
-            ws["C" + (rowCount)].Value = "OrgAccountNumber";
+            ws["A" + (rowCount)].Value = MemberAccountNumberColumnName;
+            ws["B" + (rowCount)].Value = MemberContactIdColumnName;
+            ws["C" + (rowCount)].Value = OrgAccountNumberColumnName;
 
             rowCount++;
 
@@ -250,6 +257,40 @@ namespace MemberAndOrganizationDataCorrectionInEBS
                 rowCount++;
             }
             wb.SaveAsCsv(FileName);
+        }
+
+        public static List<MemberAndOrganizationAccountDetail> ConvertDataTableToList(DataTable dt)
+        {
+            var allMemberAndOrgAccountDetails = new List<MemberAndOrganizationAccountDetail>();
+
+            foreach (DataRow row in dt.Rows)
+            {
+                var memberAndOrgAccountDetails = new MemberAndOrganizationAccountDetail();
+                memberAndOrgAccountDetails.MemberAccountNumber = Convert.ToString(row[MemberAccountNumberColumnName]);
+                memberAndOrgAccountDetails.MemberContactId = !string.IsNullOrEmpty(Convert.ToString(row[MemberContactIdColumnName])) ? Convert.ToInt64(Convert.ToString(row[MemberContactIdColumnName])) : 0;
+                memberAndOrgAccountDetails.OrgAccountNumber = Convert.ToString(row[OrgAccountNumberColumnName]);
+
+                allMemberAndOrgAccountDetails.Add(memberAndOrgAccountDetails);
+            }
+
+            return allMemberAndOrgAccountDetails;
+        }
+
+        public static DataTable LoadMemberAndOrganizationAccountDetailFromExelAsDatatable()
+        {
+            string connectionString = $"Provider=Microsoft.ACE.OLEDB.12.0; data source={FileName}; Extended Properties=Excel 12.0;";
+            DataTable dt = null;
+            using (OleDbConnection conn = new OleDbConnection(connectionString))
+            {
+                conn.Open();
+                OleDbDataAdapter objDA = new OleDbDataAdapter
+                ("select * from [Sheet1$]", conn);
+                DataSet excelDataSet = new DataSet();
+                objDA.Fill(excelDataSet);
+                dt = excelDataSet.Tables[0];
+            }
+
+            return dt;
         }
     }
 }
